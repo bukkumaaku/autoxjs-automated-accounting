@@ -1,0 +1,89 @@
+const config = {
+    overtime: 3000,
+    prompt: "你是一个记账软件，根据用户输入来选择账单的分类。用户输入支付软件的信息，你提取出关键信息。由于提供的信息中包含的类目和你自身类目并不一一对应，需要归纳为以下规定类目: “[[replace]]”。如果用户提供信息里无对应的类目，则需进行推断。如用户发送信息包含“醋”，则回答：“柴米油盐”，一定只能回答规定类目里面已经存在的！如果无法归纳，只用输出“其他”。不要回答除了规定类目类目以外的任何信息！否则会出现错误！",
+    modelSelected: 0,
+    modelList: [
+        {
+            key: "*********************************",
+            url: "https://open.bigmodel.cn/api/paas/v4/chat/completions",
+            model: "glm-4",
+            authorization: function() {
+                return gtoken(this.key);
+            },
+        },
+        {
+            key: "*********************************",
+            url: "https://api.openai.com/v1/chat/completions",
+            model: "gpt-3.5-turbo-1106",
+            authorization: function() {
+                return "Bearer " + this.key;
+            },
+        },
+    ],
+    chargeUp: {
+        platform: [
+            {
+                packageName: "com.tencent.mm",
+                compareTextReg: /^当前状态$/,
+                amountReg: /([-+])?\d+\.\d{2}/,
+                timeReg: /\d+年\d+月\d+日 \d+:\d+:\d+/,
+                defaultCate: "零钱",
+                id: "wxid",
+            },
+            {
+                packageName: "com.eg.android.AlipayGphone",
+                compareTextReg: /^创建时间$|^支付时间$/,
+                amountReg: /(支出)?\d+(\.\d{1,2})?元/,
+                timeReg: /\d+-\d+-\d+ \d+:\d+:\d+/,
+                defaultCate: "余额宝",
+                id: "zfbid",
+            },
+            {
+                packageName: "com.icbc",
+                compareTextReg: /^交易时间$/,
+                amountReg: /([-+])?\d+\.\d{2}/,
+                get timeReg() {
+                    if (textMatches(/\d+-\d+-\d+ (\d+:\d+:\d+|\d+:\d+)/).exists()) {
+                        return /\d+-\d+-\d+ (\d+:\d+:\d+|\d+:\d+)/;
+                    }
+                    return /\d+-\d+-\d+/;
+                },
+                defaultCate: "*********************************",
+                id: "ghid",
+            },
+        ],
+        paymentSoftWare: [
+            "支付宝",
+            "微信",
+            "工行",
+            "工商银行信用卡",
+            "现金",
+            "余利宝",
+            "QQ钱包",
+        ],
+        purchaseItem: [
+            "三餐",
+            "零食",
+            "买菜",
+            "柴米油盐",
+            "饮料",
+            "水果",
+            "衣服",
+            "交通",
+            "其他",
+        ],
+        incomeItem: ["工资", "生活费", "收红包", "外快", "股票基金", "其他"],
+        mappingPcsw: {
+            "工商银行信用卡(1234)": "工商银行信用卡",
+            "工商银行储蓄卡(2345)": "工行",
+            零钱: "微信",
+            余额宝: "支付宝",
+            转账: "支付宝",
+            "*********************************": "工行",
+        },
+    },
+    get model() {
+        return this.modelList[this.modelSelected];
+    },
+};
+module.exports = config;
